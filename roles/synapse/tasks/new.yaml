@@ -1,0 +1,28 @@
+---
+- name: Template out config file
+  ansible.builtin.template:
+    src: homeserver.yaml.j2
+    dest: "{{ synapse_dir }}/{{ synapse_config_file }}"
+    owner: synapse
+    group: synapse
+    mode: 0660
+  no_log: true
+
+- name: Template out log config file
+  ansible.builtin.template:
+    src: homeserver.log.config.j2
+    dest: "{{ synapse_dir }}/{{ synapse_server_name }}.log.config"
+
+- name: Generate signing key
+  ansible.builtin.command:
+    argv:
+      - "{{ synapse_venv_dir }}/bin/python"
+      - "{{ synapse_dir }}/synapse/_scripts/generate_signing_key.py"
+  register: synapse_generated_signing_key
+  no_log: true
+
+- name: Place signing key file
+  ansible.builtin.copy:
+    content: "{{ synapse_generated_signing_key.stdout }}"
+    dest: "{{ synapse_dir }}/{{ synapse_server_name }}.signing.key"
+  no_log: true

@@ -4,53 +4,35 @@
   remote_user: root
 
   tasks:
-  - name: Create synapse user and home directory
-    ansible.builtin.user:
-      name: synapse
-    register: synapse_user
+    - name: Create synapse user and home directory
+      ansible.builtin.user:
+        name: synapse
+        shell: /bin/bash
+      register: synapse_user
 
-  - name: Set synapse install directory
-    ansible.builtin.set_fact:
-      synapse_dir: "{{ synapse_user.home }}/synapse"
+    - name: Set synapse install directory
+      ansible.builtin.set_fact:
+        synapse_dir: "{{ synapse_user.home }}/synapse"
 
-  - name: Install required packages
-    ansible.builtin.package:
-      name:
-      - python3
-      - python3-dev
-      - python3-pip
-      - python3-virtualenv
-      - python3-setuptools
-      - build-essential
-      - libffi-dev
-      - libssl-dev
-      - libjpeg-dev
-      - libxslt1-dev
-  
+    - name: Install required packages
+      ansible.builtin.package:
+        name:
+          - python3
+          - python3-dev
+          - python3-pip
+          - python3-virtualenv
+          - python3-setuptools
+          - build-essential
+          - libffi-dev
+          - libssl-dev
+          - libjpeg-dev
+          - libxslt1-dev
+          - libpq-dev
+
 - name: Install Synapse in virtual environment
   hosts: synapse
   remote_user: root
   become: yes
   become_user: synapse
-
-  tasks:
-  - name: Clone synapse repository
-    ansible.builtin.git:
-      repo: 'https://github.com/matrix-org/synapse.git'
-      version: master
-      dest: "{{ synapse_dir }}"
-      update: yes
-
-  - name: Set venv directory
-    set_fact:
-      synapse_venv_dir: "{{ synapse_dir }}/env"
-  
-  - name: Install matrix-synapse in virtualenv
-    pip:
-      name:
-      - pip
-      - setuptools
-      - file://{{ synapse_dir }}
-      virtualenv_python: python3
-      virtualenv: "{{ synapse_venv_dir }}"
-      state: latest
+  roles:
+    - synapse

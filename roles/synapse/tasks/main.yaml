@@ -1,0 +1,47 @@
+---
+- name: Check mandatory variables are defined
+  assert:
+    that:
+      - synapse_dir is defined
+      - synapse_server_name is defined
+      - synapse_config_file is defined
+
+- name: Set synapse venv dir path
+  set_fact:
+    synapse_venv_dir: "{{ synapse_dir }}/env"
+
+- name: Clone synapse repository
+  ansible.builtin.git:
+    repo: "https://github.com/matrix-org/synapse.git"
+    version: master
+    dest: "{{ synapse_dir }}"
+    update: yes
+  notify:
+    - Restart synapse
+
+- name: Make sure pip and setuptools are up to date
+  pip:
+    name:
+      - pip
+      - setuptools
+    virtualenv_python: python3
+    virtualenv: "{{ synapse_venv_dir }}"
+    state: latest
+
+- name: Install matrix-synapse in virtualenv
+  pip:
+    name:
+      - file://{{ synapse_dir }}
+      - synapse-s3-storage-provider
+    virtualenv_python: python3
+    virtualenv: "{{ synapse_venv_dir }}"
+    state: latest
+
+- name: Determine whether config file exists
+  stat:
+    path: "{{ synapse_dir }}/{{ synapse_config_file }}"
+  register: synapse_config_status
+
+- name: Include configuration tasks if not yet configured
+  ansible.builtin.include_tasks: configure.yaml
+  when: not synapse_config_status.stat.exists

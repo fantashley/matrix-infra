@@ -1,0 +1,8 @@
+---
+- name: Import restore tasks if this is a migration
+  ansible.builtin.import_tasks: existing.yaml
+  when: synapse_server_migration|default(false)|bool == true
+
+- name: Import new server tasks if building a new synapse server
+  ansible.builtin.import_tasks: new.yaml
+  when: synapse_server_migration|default(false)|bool == false
