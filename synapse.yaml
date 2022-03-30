@@ -18,6 +18,7 @@
       ansible.builtin.package:
         name:
           - python3
+          - python3-apt
           - python3-dev
           - python3-pip
           - python3-virtualenv
@@ -36,3 +37,9 @@
   become_user: synapse
   roles:
     - synapse
+
+- name: Install database
+  hosts: synapse
+  remote_user: root
+  roles:
+    - database

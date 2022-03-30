@@ -1,4 +1,11 @@
 ---
+- name: Check mandatory variables for new config are defined
+  assert:
+    that:
+      - synapse_dir is defined
+      - synapse_server_name is defined
+      - synapse_db_password is defined
+
 - name: Template out config file
   ansible.builtin.template:
     src: homeserver.yaml.j2
@@ -23,6 +30,6 @@
 
 - name: Place signing key file
   ansible.builtin.copy:
-    content: "{{ synapse_generated_signing_key.stdout }}"
+    content: "{{ synapse_generated_signing_key.stdout }}\n"
     dest: "{{ synapse_dir }}/{{ synapse_server_name }}.signing.key"
   no_log: true

@@ -16,8 +16,7 @@
     version: master
     dest: "{{ synapse_dir }}"
     update: yes
-  notify:
-    - Restart synapse
+  register: synapse_repo_clone
 
 - name: Make sure pip and setuptools are up to date
   pip:
@@ -36,6 +35,7 @@
     virtualenv_python: python3
     virtualenv: "{{ synapse_venv_dir }}"
     state: latest
+  when: synapse_repo_clone.changed
 
 - name: Determine whether config file exists
   stat:
@@ -45,3 +45,17 @@
 - name: Include configuration tasks if not yet configured
   ansible.builtin.include_tasks: configure.yaml
   when: not synapse_config_status.stat.exists
+
+- name: Add systemd file
+  ansible.builtin.template:
+    src: matrix-synapse.service.j2
+    dest: /etc/systemd/system/matrix-synapse.service
+    mode: 0644
+  become: no
+  register: synapse_systemd_file
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: no
+  when: synapse_systemd_file.changed

@@ -1,0 +1,40 @@
+---
+- name: Add postgres repo key
+  ansible.builtin.apt_key:
+    url: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+    state: present
+
+- name: Add postgres apt repository
+  ansible.builtin.apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main
+    state: present
+
+- name: Install postgres and dependencies
+  ansible.builtin.package:
+    name:
+      - postgresql-13
+      - python3-psycopg2
+    state: present
+
+- name: Start postgres
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Create synapse db user
+  community.postgresql.postgresql_user:
+    name: "{{ synapse_db_user }}"
+    password: "{{ synapse_db_password }}"
+  become: yes
+  become_user: postgres
+
+- name: Create synapse database
+  community.postgresql.postgresql_db:
+    name: "{{ synapse_db_name }}"
+    owner: "{{ synapse_db_user }}"
+    lc_collate: C
+    lc_ctype: C
+    template: template0
+  become: yes
+  become_user: postgres

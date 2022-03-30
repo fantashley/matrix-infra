@@ -1,0 +1,27 @@
+# Example systemd configuration file for synapse. Copy into
+#    /etc/systemd/system/, update the paths if necessary, then:
+#
+#    systemctl enable matrix-synapse
+#    systemctl start matrix-synapse
+#
+
+[Unit]
+Description=Synapse Matrix Homeserver
+Before=nginx.service
+After=postgresql.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+
+User=synapse
+Group=synapse
+
+WorkingDirectory={{ synapse_dir }}
+ExecStart={{ synapse_venv_dir }}/bin/python -m synapse.app.homeserver --config-path={{ synapse_dir }}/{{ synapse_config_file }}
+ExecReload=/bin/kill -HUP $MAINPID
+SyslogIdentifier=matrix-synapse
+
+[Install]
+WantedBy=multi-user.target
