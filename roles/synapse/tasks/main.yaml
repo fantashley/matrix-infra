@@ -59,3 +59,28 @@
     daemon_reload: true
   become: no
   when: synapse_systemd_file.changed
+
+- name: Start synapse service
+  ansible.builtin.systemd:
+    name: matrix-synapse.service
+    state: started
+    enabled: yes
+  become: no
+
+- name: Create admin user
+  ansible.builtin.command:
+    argv:
+      - "{{ synapse_venv_dir }}/bin/register_new_matrix_user"
+      - -u
+      - "{{ synapse_admin_user }}"
+      - -p
+      - "{{ synapse_admin_password }}"
+      - -a
+      - -c
+      - "{{ synapse_dir }}/{{ synapse_config_file }}"
+      - "http://localhost:8008"
+  when: synapse_is_new | default(false)
+  retries: 3
+  delay: 5
+  register: create_user_result
+  until: create_user_result.rc == 0

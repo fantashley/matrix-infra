@@ -33,3 +33,7 @@
     content: "{{ synapse_generated_signing_key.stdout }}\n"
     dest: "{{ synapse_dir }}/{{ synapse_server_name }}.signing.key"
   no_log: true
+
+- name: Indicate new server to add user later
+  ansible.builtin.set_fact:
+    synapse_is_new: true

@@ -30,6 +30,12 @@
           - libxslt1-dev
           - libpq-dev
 
+- name: Install database
+  hosts: synapse
+  remote_user: root
+  roles:
+    - database
+
 - name: Install Synapse in virtual environment
   hosts: synapse
   remote_user: root
@@ -38,8 +44,8 @@
   roles:
     - synapse
 
-- name: Install database
+- name: Install nginx
   hosts: synapse
   remote_user: root
   roles:
-    - database
+    - nginx

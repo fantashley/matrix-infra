@@ -956,7 +956,7 @@ media_store_path: "{{ synapse_media_store_path | default(synapse_dir ~ "/media_s
 # your reverse proxy's config. Notably Nginx has a small max body size by default.
 # See https://matrix-org.github.io/synapse/latest/reverse_proxy.html.
 #
-max_upload_size: {{ synapse_max_upload_size | default("50M")}}
+max_upload_size: {{ synapse_max_upload_size | default("50M") }}
 
 # Maximum number of pixels that will be thumbnailed
 #

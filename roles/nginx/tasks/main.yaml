@@ -1,0 +1,73 @@
+---
+- name: Install nginx and required python libs
+  ansible.builtin.package:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+
+- name: Start and enable nginx
+  ansible.builtin.systemd:
+    name: nginx.service
+    state: started
+    enabled: yes
+
+- name: Remove default nginx server
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Check if synapse config already exists
+  ansible.builtin.stat:
+    path: /etc/nginx/conf.d/{{ synapse_server_fqdn }}.conf
+  register: synapse_nginx_setup
+
+- name: Add nginx config file
+  ansible.builtin.template:
+    src: synapse.conf.j2
+    dest: /etc/nginx/conf.d/{{ synapse_server_fqdn }}.conf
+  register: synapse_nginx_config
+  when: not synapse_nginx_setup.stat.exists
+
+- name: Verify nginx syntax
+  command:
+    argv:
+      - nginx
+      - -t
+  when: synapse_nginx_config.changed
+
+- name: Reload nginx if config changed
+  ansible.builtin.systemd:
+    name: nginx.service
+    state: reloaded
+  when: synapse_nginx_config.changed
+
+- name: Run certbot to acquire Lets Encrypt certs
+  command:
+    argv:
+      - certbot
+      - --nginx
+      - -d
+      - "{{ synapse_server_fqdn }},{{ synapse_server_name }}"
+      - --non-interactive
+      - --agree-tos
+      - -m
+      - "{{ synapse_admin_email }}"
+    creates: /etc/letsencrypt/live/{{ synapse_server_fqdn }}
+
+- name: Ensure matrix server ports are defined
+  ansible.builtin.blockinfile:
+    path: /etc/nginx/conf.d/{{ synapse_server_fqdn }}.conf
+    block: |4
+        listen 8448 ssl http2 default_server;
+        listen [::]:8448 ssl http2 default_server;
+
+    insertbefore: "server_name {{ synapse_server_fqdn }};"
+  notify:
+    - Reload nginx
+
+- name: Start and enable certbot renewal timer
+  ansible.builtin.systemd:
+    name: certbot.timer
+    state: started
+    enabled: yes
